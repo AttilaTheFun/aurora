@@ -107,3 +107,9 @@ void set_scissor(const ClipRect& scissor) noexcept;
 void push_debug_group(std::string label);
 void insert_debug_marker(std::string label);
 } // namespace aurora::gfx
+
+namespace aurora::gfx {
+// FIFO processor only: already ordered with preceding draw commands. The
+// public push_encoder_task drains FIFO and would deadlock on that worker.
+bool push_encoder_task_from_fifo(EncoderTaskId type);
+}

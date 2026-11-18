@@ -1,3 +1,16 @@
+# Browser embedding owns the canvas, event loop, input, audio and GPU provider.
+# Keep only the shared utilities; native window/ImGui/Dawn code stays native.
+if(EMSCRIPTEN)
+  add_library(aurora_core STATIC lib/logging.cpp lib/thread.cpp lib/time.cpp
+    lib/io.cpp lib/webgpu/gpu_prof.cpp)
+  add_library(aurora::core ALIAS aurora_core)
+  target_compile_definitions(aurora_core PUBLIC AURORA TARGET_PC AURORA_ENABLE_GX)
+  target_include_directories(aurora_core PUBLIC include)
+  target_link_libraries(aurora_core PUBLIC fmt::fmt ${AURORA_SDL3_TARGET} xxhash dawn::webgpu_dawn)
+  target_link_libraries(aurora_core PRIVATE absl::btree absl::flat_hash_map sqlite3 TracyClient)
+  return()
+endif()
+
 add_library(aurora_core STATIC
         lib/aurora.cpp
         lib/device.cpp

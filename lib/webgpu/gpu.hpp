@@ -16,6 +16,7 @@ struct GraphicsConfig {
   wgpu::TextureFormat depthFormat;
   uint32_t msaaSamples;
   uint16_t textureAnisotropy;
+  bool synchronousPipelines = false;
 };
 struct TextureWithSampler {
   wgpu::Texture texture;
@@ -57,7 +58,7 @@ extern bool g_bcTexturesSupported;
 extern bool g_astcTexturesSupported;
 extern bool g_textureComponentSwizzleSupported;
 
-bool initialize(AuroraBackend backend, bool allowCpu);
+bool initialize(AuroraBackend backend, bool allowCpu, uint32_t headlessWidth = 0, uint32_t headlessHeight = 0);
 void shutdown();
 void release_surface() noexcept;
 bool refresh_surface(bool recreate = true);

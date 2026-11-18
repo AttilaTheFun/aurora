@@ -1628,7 +1628,7 @@ std::string build_shader_source(const ShaderConfig& config) noexcept {
     fragmentFn += "\n    prev = vec4f(in.nrm, prev.a);";
   }
 
-  const auto shaderSource = fmt::format(R"""(
+  auto shaderSource = fmt::format(R"""(
 fn bswap32(v: u32, le: bool) -> u32 {{
   if (le) {{
     return v;
@@ -1998,6 +1998,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {{{6}{5}
 )""",
                                         uniBufAttrs, texBindings, vtxOutAttrs, vtxInAttrs, vtxXfrAttrs, fragmentFn,
                                         fragmentFnPre, vtxXfrAttrsPre, uniformPre);
+#ifdef __EMSCRIPTEN__
+  // Browser WebGPU has no native Dawn push constants. The same 64 bytes live
+  // in a dynamic uniform binding, allocated per draw from the frame arena.
+  const std::string immediateDeclaration = "var<immediate> imm: Immediate;";
+  const auto immediateAt = shaderSource.find(immediateDeclaration);
+  if (immediateAt != std::string::npos) {
+    shaderSource.replace(immediateAt, immediateDeclaration.size(),
+        "@group(1) @binding(1) var<uniform> imm: Immediate;");
+  }
+#endif
   if (EnableDebugPrints) {
     Log.info("Generated shader (hash {:x}): {}", hash, shaderSource);
   }

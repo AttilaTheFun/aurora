@@ -1,4 +1,15 @@
 include_guard(GLOBAL)
+
+# Browser WebGPU is supplied by Emscripten's pinned Emdawn port, not native Dawn.
+if(EMSCRIPTEN)
+  add_library(aurora_emdawn INTERFACE)
+  target_compile_options(aurora_emdawn INTERFACE --use-port=emdawnwebgpu)
+  target_link_options(aurora_emdawn INTERFACE --use-port=emdawnwebgpu)
+  add_library(dawn::webgpu_dawn ALIAS aurora_emdawn)
+  add_library(dawn::dawncpp_headers ALIAS aurora_emdawn)
+  set(AURORA_DAWN_IS_SHARED FALSE)
+  return()
+endif()
 include("${CMAKE_CURRENT_LIST_DIR}/AuroraTargetPlatform.cmake")
 
 # Resolve Dawn/WebGPU dependency based on AURORA_DAWN_PROVIDER and AURORA_DAWN_LINKAGE.

@@ -9,6 +9,8 @@
 namespace aurora::gx {
 namespace {
 constexpr Module Log{"aurora::gx"};
+bool displayWidescreen = false;
+bool applyWidescreen = false;
 
 bool is_alpha_bump_channel(GXChannelID id) { return id == GX_ALPHA_BUMP || id == GX_ALPHA_BUMPN; }
 
@@ -369,6 +371,21 @@ ShaderInfo build_shader_info(const ShaderConfig& config) noexcept {
   return info;
 }
 
+void set_display_widescreen(bool enabled) noexcept {
+  if (displayWidescreen != enabled) {
+    displayWidescreen = enabled;
+    g_gxState.dirty |= DirtyUniform;
+  }
+}
+
+void update_display_projection() noexcept {
+  const bool enabled = displayWidescreen && !gfx::is_offscreen();
+  if (applyWidescreen != enabled) {
+    applyWidescreen = enabled;
+    g_gxState.dirty |= DirtyUniform;
+  }
+}
+
 static void fill_uniform(ByteBuffer& buf, const ShaderInfo& info) noexcept {
   buf.reserve_extra(info.uniformSize);
 
@@ -390,6 +407,13 @@ static void fill_uniform(ByteBuffer& buf, const ShaderInfo& info) noexcept {
     }
   }
   auto proj = g_gxState.proj;
+  // Anamorphic 16:9: retain the 640x480 EFB and expand horizontal view.
+  // Scale the complete row (including translation) so orthographic HUD and
+  // movies stay centered at their original proportions after presentation.
+  // Offscreen shadow/texture cameras must retain their original projection.
+  if (applyWidescreen) {
+    proj.m0 = proj.m0 * Vec4{0.75f, 0.75f, 0.75f, 0.75f};
+  }
   if constexpr (UseReversedZ) {
     proj.m2 = proj.m2 * Vec4{-1.f, -1.f, -1.f, -1.f};
   } else {

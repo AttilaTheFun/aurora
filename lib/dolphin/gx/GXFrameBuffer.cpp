@@ -155,7 +155,7 @@ void GXAdjustForOverscan(GXRenderModeObj* rmin, GXRenderModeObj* rmout, u16 hor,
   rmout->xfbHeight = size.fb_height;
 }
 
-void GXSetDispCopySrc(u16 left, u16 top, u16 wd, u16 ht) {}
+
 
 void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) {
   GX_WRITE_AURORA(GX_AURORA_LOAD_COPY_SRC);
@@ -165,7 +165,7 @@ void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) {
   GX_WRITE_U32(ht);
 }
 
-void GXSetDispCopyDst(u16 wd, u16 ht) {}
+
 
 void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) {
   GX_WRITE_AURORA(GX_AURORA_LOAD_COPY_DST);
@@ -178,7 +178,7 @@ void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) {
 // TODO GXSetDispCopyFrame2Field
 // TODO GXSetCopyClamp
 
-u32 GXSetDispCopyYScale(f32 vscale) { return 0; }
+
 
 void GXSetCopyClear(GXColor color, u32 depth) {
   // BP 0x4F: clear color R + A
@@ -203,11 +203,11 @@ void GXSetCopyClear(GXColor color, u32 depth) {
   __gx->bpSent = 1;
 }
 
-void GXSetCopyFilter(GXBool aa, u8 sample_pattern[12][2], GXBool vf, u8 vfilter[7]) {}
 
-void GXSetDispCopyGamma(GXGamma gamma) {}
 
-void GXCopyDisp(void* dest, GXBool clear) {}
+
+
+
 
 void GXCopyTex(void* dest, GXBool clear) {
   GX_WRITE_AURORA(GX_AURORA_LOAD_COPY_DEST);

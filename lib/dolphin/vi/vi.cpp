@@ -5,11 +5,13 @@
 #include "vi_internal.hpp"
 
 #include <optional>
+#include <mutex>
 
 namespace aurora::vi {
-std::optional<GXRenderModeObj> g_renderMode;
+static std::optional<GXRenderModeObj> g_renderMode;
+static std::mutex sRenderModeMutex;
 
-Vec2<uint32_t> render_mode_size() noexcept {
+static Vec2<uint32_t> render_mode_size_unlocked() noexcept {
   if (!g_renderMode) {
     return {640, 480};
   }
@@ -17,25 +19,39 @@ Vec2<uint32_t> render_mode_size() noexcept {
 }
 
 void configure(const GXRenderModeObj* rm) noexcept {
-  const auto oldSize = render_mode_size();
-  if (rm == nullptr) {
-    g_renderMode.reset();
-  } else {
-    g_renderMode = *rm;
+  bool resized;
+  {
+    // HSD may configure VI inside the native retrace callback while the
+    // rendering thread reads its dimensions.
+    std::lock_guard lock{sRenderModeMutex};
+    const auto oldSize = render_mode_size_unlocked();
+    if (rm == nullptr) {
+      g_renderMode.reset();
+    } else {
+      g_renderMode = *rm;
+    }
+    resized = render_mode_size_unlocked() != oldSize;
   }
-  if (render_mode_size() != oldSize) {
+  if (resized) {
     window::request_frame_buffer_resize();
   }
 }
 
 Vec2<uint32_t> configured_fb_size() noexcept {
-  return render_mode_size();
+  std::lock_guard lock{sRenderModeMutex};
+  return render_mode_size_unlocked();
 }
 } // namespace aurora::vi
 
 extern "C" {
-void VIInit() {}
-void VIConfigure(const GXRenderModeObj* rm) { aurora::vi::configure(rm); }
+void melee_vi_init();
+void melee_vi_flush();
+void melee_vi_configure(uint32_t mode, uint16_t y);
+void VIInit() { melee_vi_init(); }
+void VIConfigure(const GXRenderModeObj* rm) {
+  aurora::vi::configure(rm);
+  if (rm) melee_vi_configure(rm->viTVmode, rm->viYOrigin);
+}
 void VIConfigurePan(u16 xOrg, u16 yOrg, u16 width, u16 height) {
   (void)xOrg;
   (void)yOrg;
@@ -43,7 +59,7 @@ void VIConfigurePan(u16 xOrg, u16 yOrg, u16 width, u16 height) {
   (void)height;
 }
 u32 VIGetTvFormat() { return 0; }
-void VIFlush() {}
+void VIFlush() { melee_vi_flush(); }
 
 void VISetWindowTitle(const char* title) { aurora::window::set_title(title); }
 void VISetWindowFullscreen(bool fullscreen) { aurora::window::set_fullscreen(fullscreen); }

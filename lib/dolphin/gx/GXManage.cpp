@@ -261,16 +261,18 @@ GXFifoObj* GXInit(void* base, u32 size) {
   return &sFifoObj;
 }
 
+void GXWaitDrawDone() { aurora::gx::fifo::wait_draw_done(); }
+
 void GXDrawDone() {
-  GXFlush();
-  GX_WRITE_RAS_REG(kDrawDoneCommand);
-  aurora::gx::fifo::drain();
+  GXSetDrawDone();
+  GXWaitDrawDone();
 }
 
 void GXSetDrawDone() {
   GXFlush();
   GX_WRITE_RAS_REG(kDrawDoneCommand);
   aurora::gx::fifo::publish();
+  aurora::gx::fifo::submit_draw_done_frame();
 }
 
 GXDrawDoneCallback GXSetDrawDoneCallback(GXDrawDoneCallback cb) { return aurora::gx::fifo::set_draw_done_callback(cb); }

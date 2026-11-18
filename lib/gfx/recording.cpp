@@ -1007,7 +1007,7 @@ bool resolve_pass(const ResolveDesc& desc, ResolvedTargets& out) {
   return true;
 }
 
-bool push_encoder_task(EncoderTaskId type, const void* payload, size_t payloadSize) {
+static bool push_encoder_task_impl(EncoderTaskId type, const void* payload, size_t payloadSize, bool drainFifo) {
   if (type == InvalidEncoderTask) {
     Log.warn("push_encoder_task: invalid encoder task type");
     return false;
@@ -1025,7 +1025,7 @@ bool push_encoder_task(EncoderTaskId type, const void* payload, size_t payloadSi
     return false;
   }
 
-  gx::fifo::drain();
+  if (drainFifo) gx::fifo::drain();
 
   if (!g_recorder.active() || g_recorder.currentRenderPass == UINT32_MAX) {
     Log.warn("push_encoder_task: called outside an active render pass");
@@ -1056,6 +1056,13 @@ bool push_encoder_task(EncoderTaskId type, const void* payload, size_t payloadSi
 
   resume_efb_pass_loading(prevPass);
   return true;
+}
+
+bool push_encoder_task(EncoderTaskId type, const void* payload, size_t payloadSize) {
+  return push_encoder_task_impl(type, payload, payloadSize, true);
+}
+bool push_encoder_task_from_fifo(EncoderTaskId type) {
+  return push_encoder_task_impl(type, nullptr, 0, false);
 }
 
 template <>

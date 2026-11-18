@@ -98,6 +98,12 @@ void publish() noexcept;
 
 using DrawDoneCallback = void (*)();
 DrawDoneCallback set_draw_done_callback(DrawDoneCallback callback) noexcept;
+// The frame owner can submit/continue its recording frame at an SDK marker.
+// Without a hook, the external Aurora loop remains responsible for submission.
+using DrawDoneSubmitter = void (*)();
+DrawDoneSubmitter set_draw_done_submitter(DrawDoneSubmitter submitter) noexcept;
+void submit_draw_done_frame();
+void wait_draw_done();
 
 // Display list recording
 void begin_display_list(uint8_t* buf, uint32_t size);

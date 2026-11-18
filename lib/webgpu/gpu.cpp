@@ -748,7 +748,8 @@ static bool create_surface() {
   return true;
 }
 
-bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
+bool initialize(AuroraBackend auroraBackend, bool allowCpu, uint32_t headlessWidth, uint32_t headlessHeight) {
+  const bool headless = headlessWidth != 0 && headlessHeight != 0;
   if (!g_instance) {
     Log.info("Creating WebGPU instance");
     const std::array requiredInstanceFeatures{
@@ -780,7 +781,7 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
   g_dawnInstance->EnableBackendValidation(backend != WGPUBackendType::D3D12);
 #endif
 
-  if (!create_surface()) {
+  if (!headless && !create_surface()) {
     return false;
   }
   {
@@ -1009,6 +1010,23 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
     g_device.SetLoggingCallback(wgpu_log);
   }
   g_queue = g_device.GetQueue();
+
+  if (headless) {
+    g_graphicsConfig = GraphicsConfig{
+      .surfaceConfiguration = {.format = wgpu::TextureFormat::RGBA8Unorm,
+        .usage = wgpu::TextureUsage::RenderAttachment, .width = headlessWidth, .height = headlessHeight},
+      .depthFormat = wgpu::TextureFormat::Depth32Float, .msaaSamples = g_config.msaa,
+      .textureAnisotropy = g_config.maxTextureAnisotropy, .synchronousPipelines = true,
+    };
+    create_copy_pipeline();
+    create_resample_pipeline();
+    gpu_prof::initialize();
+    g_frameBuffer = create_render_texture(headlessWidth, headlessHeight, true);
+    g_frameBufferResolved = create_render_texture(headlessWidth, headlessHeight, false);
+    g_depthBuffer = create_depth_texture(headlessWidth, headlessHeight);
+    g_initialized = true;
+    return true;
+  }
 
   const wgpu::Status status = g_surface.GetCapabilities(g_adapter, &g_surfaceCapabilities);
   if (status != wgpu::Status::Success) {

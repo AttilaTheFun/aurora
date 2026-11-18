@@ -426,6 +426,7 @@ static void push_gx_draw(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, gfx::Rang
     }
   }
 
+  update_display_projection();
   const bool uniformValid = (state.dirty & DirtyUniform) == 0 && cache.uniformRange.size != 0;
   if (!uniformValid) {
     cache.uniformRange = build_uniform(cache.shaderInfo);
@@ -458,6 +459,9 @@ static void push_gx_draw(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, gfx::Rang
       .idxRange = idxRange,
       .uniformRange = cache.uniformRange,
       .immediateData = immediates,
+#ifdef __EMSCRIPTEN__
+      .immediateRange = gfx::push_uniform(immediates),
+#endif
       .vtxCount = vtxCount,
       .indexCount = numIndices,
       .instanceCount = instanceCount,

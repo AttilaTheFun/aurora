@@ -7,6 +7,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <span>
@@ -334,6 +335,7 @@ private:
       m_owned = true;
     } else if (size > m_capacity) {
       if (!m_owned) {
+        std::fprintf(stderr, "Aurora mapped buffer overflow: used=%zu requested=%zu capacity=%zu\n", m_length, size, m_capacity);
         abort();
       }
       if (size < m_capacity * 2) {
